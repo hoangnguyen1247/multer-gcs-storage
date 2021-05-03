@@ -37,6 +37,9 @@
         "@babel/preset-typescript": "^7.10.1",
         "@babel/runtime": "^7.11.2",
         "@google-cloud/storage": "^5.8.4",
+        "@semantic-release/exec": "^5.0.0",
+        "@semantic-release/github": "^7.2.1",
+        "@semantic-release/npm": "^7.1.1",
         "@types/chai": "^4.2.11",
         "@types/express": "^4.17.7",
         "@types/mocha": "^7.0.2",
@@ -56,6 +59,7 @@
         "on-finished": "^2.3.0",
         "prettier": "^2.1.1",
         "rimraf": "^3.0.2",
+        "semantic-release": "^17.4.2",
         "ts-mocha": "^7.0.0",
         "typescript": "^3.9.5",
         "xtend": "^4.0.2"
