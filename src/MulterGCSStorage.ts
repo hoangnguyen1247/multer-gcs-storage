@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import stream from 'stream';
 import fileType from 'file-type';
+import mime from 'mime-types';
 import isSvg from 'is-svg';
 import parallel from 'run-parallel';
 import sharp from 'sharp';
@@ -262,7 +263,9 @@ function GCSStorage(opts) {
             this.getShouldCreateThumbnail = opts.shouldCreateThumbnail;
             break;
         case 'boolean':
-            this.getShouldCreateThumbnail = staticValue(opts.shouldCreateThumbnail);
+            this.getShouldCreateThumbnail = staticValue(
+                opts.shouldCreateThumbnail
+            );
             break;
         case 'undefined':
             this.getShouldCreateThumbnail = defaultShouldCreateThumbnail;
@@ -278,7 +281,9 @@ function GCSStorage(opts) {
             this.getShouldCreateFeatured = opts.shouldCreateFeatured;
             break;
         case 'boolean':
-            this.getShouldCreateFeatured = staticValue(opts.shouldCreateFeatured);
+            this.getShouldCreateFeatured = staticValue(
+                opts.shouldCreateFeatured
+            );
             break;
         case 'undefined':
             this.getShouldCreateFeatured = defaultShouldCreateFeatured;
@@ -313,6 +318,7 @@ GCSStorage.prototype._handleFile = function (req, file, cb) {
             params.ContentDisposition = opts.contentDisposition;
         }
 
+        const type = mime.lookup(req.file.originalname);
         const sharpStream = sharp();
         const thumbStream = new stream.PassThrough();
         const featuredStream = new stream.PassThrough();
@@ -326,91 +332,166 @@ GCSStorage.prototype._handleFile = function (req, file, cb) {
             .pipe(featuredStream);
         file.stream.pipe(sharpStream);
 
+        const bucket = this.gcsClient.bucket(opts.bucket);
         if (opts.shouldCreateThumbnail) {
-            this.gcsClient
-                .bucket(opts.bucket)
-                .upload(thumbStream, {
-                    destination: parseFileKey(opts.key, 'thumb'),
-                })
-                .then(() => {
-                    cb(null, {
-                        size: currentSize,
-                        bucket: opts.bucket,
-                        key: opts.key,
-                        acl: opts.acl,
-                        contentType: opts.contentType,
-                        contentDisposition: opts.contentDisposition,
-                        storageClass: opts.storageClass,
-                        serverSideEncryption: opts.serverSideEncryption,
-                        metadata: opts.metadata,
-                        // location: result.Location,
-                        etag: "",
-                        // versionId: result.VersionId,
-                    });
-                })
-                .catch(err => {
-                    cb(err);
+            // this.gcsClient
+            //     .bucket(opts.bucket)
+            //     .upload(thumbStream, {
+            //         destination: parseFileKey(opts.key, 'thumb'),
+            //     })
+            //     .then(() => {
+            //         cb(null, {
+            //             size: currentSize,
+            //             bucket: opts.bucket,
+            //             key: opts.key,
+            //             acl: opts.acl,
+            //             contentType: opts.contentType,
+            //             contentDisposition: opts.contentDisposition,
+            //             storageClass: opts.storageClass,
+            //             serverSideEncryption: opts.serverSideEncryption,
+            //             metadata: opts.metadata,
+            //             // location: result.Location,
+            //             etag: "",
+            //             // versionId: result.VersionId,
+            //         });
+            //     })
+            //     .catch(err => {
+            //         cb(err);
+            //     });
+
+            const thumbBlob = bucket.file(parseFileKey(opts.key, 'thumb'));
+
+            const thumbFileStream = thumbBlob.createWriteStream({
+                resumable: true,
+                contentType: type,
+                predefinedAcl: 'publicRead',
+            });
+
+            thumbFileStream.on('error', (err) => {
+                cb(err);
+            });
+
+            thumbFileStream.on('finish', () => {
+                cb(null, {
+                    size: currentSize,
+                    url: `https://storage.googleapis.com/${bucket.name}/${thumbBlob.name}`,
                 });
+            });
+
+            // thumbFileStream.end(req.file.buffer);
+            thumbStream.pipe(thumbFileStream);
         }
 
         if (opts.shouldCreateFeatured) {
-            this.gcsClient
-                .bucket(opts.bucket)
-                .upload(featuredStream, {
-                    destination: parseFileKey(opts.key, 'featured'),
-                })
-                .then(() => {
-                    cb(null, {
-                        size: currentSize,
-                        bucket: opts.bucket,
-                        key: opts.key,
-                        acl: opts.acl,
-                        contentType: opts.contentType,
-                        contentDisposition: opts.contentDisposition,
-                        storageClass: opts.storageClass,
-                        serverSideEncryption: opts.serverSideEncryption,
-                        metadata: opts.metadata,
-                        // location: result.Location,
-                        etag: "",
-                        // versionId: result.VersionId,
-                    });
-                })
-                .catch(err => {
-                    cb(err);
-                })
-        }
+            // this.gcsClient
+            //     .bucket(opts.bucket)
+            //     .upload(featuredStream, {
+            //         destination: parseFileKey(opts.key, 'featured'),
+            //     })
+            //     .then(() => {
+            //         cb(null, {
+            //             size: currentSize,
+            //             bucket: opts.bucket,
+            //             key: opts.key,
+            //             acl: opts.acl,
+            //             contentType: opts.contentType,
+            //             contentDisposition: opts.contentDisposition,
+            //             storageClass: opts.storageClass,
+            //             serverSideEncryption: opts.serverSideEncryption,
+            //             metadata: opts.metadata,
+            //             // location: result.Location,
+            //             etag: "",
+            //             // versionId: result.VersionId,
+            //         });
+            //     })
+            //     .catch(err => {
+            //         cb(err);
+            //     });
 
-        this.gcsClient
-            .bucket(opts.bucket)
-            .upload(file.stream, {
-                destination: opts.key,
-            })
-            .then(() => {
-                cb(null, {
-                    size: currentSize,
-                    bucket: opts.bucket,
-                    key: opts.key,
-                    acl: opts.acl,
-                    contentType: opts.contentType,
-                    contentDisposition: opts.contentDisposition,
-                    storageClass: opts.storageClass,
-                    serverSideEncryption: opts.serverSideEncryption,
-                    metadata: opts.metadata,
-                    // location: result.Location,
-                    etag: "",
-                    // versionId: result.VersionId,
-                });
-            })
-            .catch(err => {
+            const featuredBlob = bucket.file(
+                parseFileKey(opts.key, 'featured')
+            );
+
+            const featuredFileStream = featuredBlob.createWriteStream({
+                resumable: true,
+                contentType: type,
+                predefinedAcl: 'publicRead',
+            });
+
+            featuredFileStream.on('error', (err) => {
                 cb(err);
             });
+
+            featuredFileStream.on('finish', () => {
+                cb(null, {
+                    size: currentSize,
+                    url: `https://storage.googleapis.com/${bucket.name}/${featuredBlob.name}`,
+                });
+            });
+
+            // featuredFileStream.end(req.file.buffer);
+            featuredStream.pipe(featuredFileStream);
+        }
+
+        // this.gcsClient
+        //     .bucket(opts.bucket)
+        //     .upload(file.stream, {
+        //         destination: opts.key,
+        //     })
+        //     .then(() => {
+        //         cb(null, {
+        //             size: currentSize,
+        //             bucket: opts.bucket,
+        //             key: opts.key,
+        //             acl: opts.acl,
+        //             contentType: opts.contentType,
+        //             contentDisposition: opts.contentDisposition,
+        //             storageClass: opts.storageClass,
+        //             serverSideEncryption: opts.serverSideEncryption,
+        //             metadata: opts.metadata,
+        //             // location: result.Location,
+        //             etag: "",
+        //             // versionId: result.VersionId,
+        //         });
+        //     })
+        //     .catch(err => {
+        //         cb(err);
+        //     });
+
+        const primaryBlob = bucket.file(opts.key);
+
+        const primaryFileStream = primaryBlob.createWriteStream({
+            resumable: true,
+            contentType: type,
+            predefinedAcl: 'publicRead',
+        });
+
+        primaryFileStream.on('error', (err) => {
+            cb(err);
+        });
+
+        primaryFileStream.on('finish', () => {
+            cb(null, {
+                size: currentSize,
+                url: `https://storage.googleapis.com/${bucket.name}/${primaryBlob.name}`,
+            });
+        });
+
+        // primaryFileStream.end(req.file.buffer);
+        thumbStream.pipe(primaryFileStream);
     });
 };
 
 GCSStorage.prototype._removeFile = function (req, file, cb) {
     this.gcsClient.bucket(file.bucket).file(file.key).delete();
-    this.gcsClient.bucket(file.bucket).file(parseFileKey(file.key, '-thumb')).delete();
-    this.gcsClient.bucket(file.bucket).file(parseFileKey(file.key, '-featured')).delete();
+    this.gcsClient
+        .bucket(file.bucket)
+        .file(parseFileKey(file.key, '-thumb'))
+        .delete();
+    this.gcsClient
+        .bucket(file.bucket)
+        .file(parseFileKey(file.key, '-featured'))
+        .delete();
 
     cb({});
 };
