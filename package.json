@@ -1,6 +1,6 @@
 {
     "name": "multer-gcs-storage",
-    "version": "1.0.0-develop.3",
+    "version": "1.0.0-develop.4",
     "description": "Multer MinIO Storage",
     "main": "index.js",
     "types": "index.d.ts",

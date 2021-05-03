@@ -318,7 +318,7 @@ GCSStorage.prototype._handleFile = function (req, file, cb) {
             params.ContentDisposition = opts.contentDisposition;
         }
 
-        const type = mime.lookup(req.file.originalname);
+        const type = mime.lookup(file.originalname);
         const sharpStream = sharp();
         const thumbStream = new stream.PassThrough();
         const featuredStream = new stream.PassThrough();
@@ -478,7 +478,7 @@ GCSStorage.prototype._handleFile = function (req, file, cb) {
         });
 
         // primaryFileStream.end(req.file.buffer);
-        thumbStream.pipe(primaryFileStream);
+        file.stream.pipe(primaryFileStream);
     });
 };
 
