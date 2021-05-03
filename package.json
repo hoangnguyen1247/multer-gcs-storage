@@ -1,6 +1,6 @@
 {
     "name": "multer-gcs-storage",
-    "version": "0.0.8",
+    "version": "1.0.0-develop.1",
     "description": "Multer MinIO Storage",
     "main": "index.js",
     "types": "index.d.ts",
@@ -72,6 +72,7 @@
         "build:types": "tsc --emitDeclarationOnly",
         "build:js": "cross-env NODE_PATH=. babel src --out-dir lib --extensions \".ts,.tsx\" --ignore '**/*.test.ts' --source-maps false",
         "build:js:minify": "babel src --out-dir lib --extensions \".ts,.tsx\" --ignore '**/*.test.ts' --source-maps false --presets minify",
+        "release": "semantic-release",
         "build:js:sourcemap": "babel src --out-dir lib --extensions \".ts,.tsx\" --source-maps inline",
         "eslint": "node_modules/.bin/eslint src/** --fix",
         "test:mocha": "cross-env NODE_PATH=. ts-mocha test/test.ts --timeout=60000 --exit",

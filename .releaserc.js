@@ -11,7 +11,7 @@ module.exports = {
         "@semantic-release/github",
         ["@semantic-release/exec", {
             // "prepareCmd": "echo -n ${nextRelease.version} > VERSION",
-            "prepareCmd": "node ./buildScripts/bumpVersion.js ${nextRelease.version}",
+            // "prepareCmd": "node ./buildScripts/bumpVersion.js ${nextRelease.version}",
         }]
     ]
 }

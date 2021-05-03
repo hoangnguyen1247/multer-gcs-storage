@@ -1,7 +1,7 @@
 const fs = require("fs-extra");
 
 function bumpVersion(newVersion) {
-    const pkg = require("../dist/package.json");
+    const pkg = require("../package.json");
 
     // If standalone build required from Phoenix for Widgets and Components
     if (newVersion) {
@@ -9,7 +9,7 @@ function bumpVersion(newVersion) {
     }
 
     // Prepare the package.json for release
-    fs.writeFileSync("dist/package.json", JSON.stringify(pkg, null, 2));
+    fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
 }
 
 var myArgs = process.argv.slice(2);
