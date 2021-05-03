@@ -1,3 +1,3 @@
-const MulterMinIOStorage = require('./lib/MulterMinIOStorage');
+const MulterGCSStorage = require('./lib/MulterGCSStorage');
 
-module.exports = MulterMinIOStorage
+module.exports = MulterGCSStorage

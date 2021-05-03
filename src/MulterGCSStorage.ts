@@ -98,13 +98,13 @@ function collect(storage, req, file, cb) {
     );
 }
 
-function MinIOStorage(opts) {
-    switch (typeof opts.minioClient) {
+function GCSStorage(opts) {
+    switch (typeof opts.gcsClient) {
         case 'object':
-            this.minioClient = opts.minioClient;
+            this.gcsClient = opts.gcsClient;
             break;
         default:
-            throw new TypeError('Expected opts.minioClient to be object');
+            throw new TypeError('Expected opts.gcsClient to be object');
     }
 
     switch (typeof opts.bucket) {
@@ -290,7 +290,7 @@ function MinIOStorage(opts) {
     }
 }
 
-MinIOStorage.prototype._handleFile = function (req, file, cb) {
+GCSStorage.prototype._handleFile = function (req, file, cb) {
     collect(this, req, file, function (err, opts) {
         if (err) return cb(err);
 
@@ -327,67 +327,12 @@ MinIOStorage.prototype._handleFile = function (req, file, cb) {
         file.stream.pipe(sharpStream);
 
         if (opts.shouldCreateThumbnail) {
-            this.minioClient.putObject(
-                opts.bucket,
-                parseFileKey(opts.key, 'thumb'),
-                thumbStream,
-                (err, etag) => {
-                    if (err) cb(err);
-                    else {
-                        cb(null, {
-                            size: currentSize,
-                            bucket: opts.bucket,
-                            key: opts.key,
-                            acl: opts.acl,
-                            contentType: opts.contentType,
-                            contentDisposition: opts.contentDisposition,
-                            storageClass: opts.storageClass,
-                            serverSideEncryption: opts.serverSideEncryption,
-                            metadata: opts.metadata,
-                            // location: result.Location,
-                            etag: etag,
-                            // versionId: result.VersionId,
-                        });
-                    }
-                }
-            );
-        }
-
-        if (opts.shouldCreateFeatured) {
-            this.minioClient.putObject(
-                opts.bucket,
-                parseFileKey(opts.key, 'featured'),
-                featuredStream,
-                (err, etag) => {
-                    if (err) cb(err);
-                    else {
-                        cb(null, {
-                            size: currentSize,
-                            bucket: opts.bucket,
-                            key: opts.key,
-                            acl: opts.acl,
-                            contentType: opts.contentType,
-                            contentDisposition: opts.contentDisposition,
-                            storageClass: opts.storageClass,
-                            serverSideEncryption: opts.serverSideEncryption,
-                            metadata: opts.metadata,
-                            // location: result.Location,
-                            etag: etag,
-                            // versionId: result.VersionId,
-                        });
-                    }
-                }
-            );
-        }
-
-        this.minioClient.putObject(
-            opts.bucket,
-            opts.key,
-            file.stream,
-            file.size,
-            (err, etag) => {
-                if (err) cb(err);
-                else {
+            this.gcsClient
+                .bucket(opts.bucket)
+                .upload(thumbStream, {
+                    destination: parseFileKey(opts.key, 'thumb'),
+                })
+                .then(() => {
                     cb(null, {
                         size: currentSize,
                         bucket: opts.bucket,
@@ -399,31 +344,79 @@ MinIOStorage.prototype._handleFile = function (req, file, cb) {
                         serverSideEncryption: opts.serverSideEncryption,
                         metadata: opts.metadata,
                         // location: result.Location,
-                        etag: etag,
+                        etag: "",
                         // versionId: result.VersionId,
                     });
-                }
-            }
-        );
+                })
+                .catch(err => {
+                    cb(err);
+                });
+        }
+
+        if (opts.shouldCreateFeatured) {
+            this.gcsClient
+                .bucket(opts.bucket)
+                .upload(featuredStream, {
+                    destination: parseFileKey(opts.key, 'featured'),
+                })
+                .then(() => {
+                    cb(null, {
+                        size: currentSize,
+                        bucket: opts.bucket,
+                        key: opts.key,
+                        acl: opts.acl,
+                        contentType: opts.contentType,
+                        contentDisposition: opts.contentDisposition,
+                        storageClass: opts.storageClass,
+                        serverSideEncryption: opts.serverSideEncryption,
+                        metadata: opts.metadata,
+                        // location: result.Location,
+                        etag: "",
+                        // versionId: result.VersionId,
+                    });
+                })
+                .catch(err => {
+                    cb(err);
+                })
+        }
+
+        this.gcsClient
+            .bucket(opts.bucket)
+            .upload(file.stream, {
+                destination: opts.key,
+            })
+            .then(() => {
+                cb(null, {
+                    size: currentSize,
+                    bucket: opts.bucket,
+                    key: opts.key,
+                    acl: opts.acl,
+                    contentType: opts.contentType,
+                    contentDisposition: opts.contentDisposition,
+                    storageClass: opts.storageClass,
+                    serverSideEncryption: opts.serverSideEncryption,
+                    metadata: opts.metadata,
+                    // location: result.Location,
+                    etag: "",
+                    // versionId: result.VersionId,
+                });
+            })
+            .catch(err => {
+                cb(err);
+            });
     });
 };
 
-MinIOStorage.prototype._removeFile = function (req, file, cb) {
-    this.minioClient.removeObject(file.bucket, file.key, cb);
-    this.minioClient.removeObject(
-        file.bucket,
-        parseFileKey(file.key, '-thumb'),
-        cb
-    );
-    this.minioClient.removeObject(
-        file.bucket,
-        parseFileKey(file.key, '-featured'),
-        cb
-    );
+GCSStorage.prototype._removeFile = function (req, file, cb) {
+    this.gcsClient.bucket(file.bucket).file(file.key).delete();
+    this.gcsClient.bucket(file.bucket).file(parseFileKey(file.key, '-thumb')).delete();
+    this.gcsClient.bucket(file.bucket).file(parseFileKey(file.key, '-featured')).delete();
+
+    cb({});
 };
 
 export default function (opts) {
-    return new MinIOStorage(opts);
+    return new GCSStorage(opts);
 }
 
 export const AUTO_CONTENT_TYPE = autoContentType;

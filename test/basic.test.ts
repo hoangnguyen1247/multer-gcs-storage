@@ -7,8 +7,8 @@ import stream from 'stream';
 import FormData from 'form-data'
 import onFinished from 'on-finished';
 
-import mockS3 from './util/mock-s3';
-import multerS3 from '../';
+import mockGCS from './util/mock-gcs';
+import multerGCSStorage from '../';
 
 var VALID_OPTIONS = {
     bucket: 'string'
@@ -44,25 +44,25 @@ function submitForm(multer, form, cb) {
     })
 }
 
-describe('Multer S3', function () {
+describe('Multer GCS Storage', function () {
     it('is exposed as a function', function () {
-        assert.equal(typeof multerS3, 'function')
+        assert.equal(typeof multerGCSStorage, 'function')
     })
 
     INVALID_OPTIONS.forEach(function (testCase) {
         it('throws when given ' + testCase[0], function () {
             function testBody() {
-                multerS3(extend(VALID_OPTIONS, testCase[1]))
+                multerGCSStorage(extend(VALID_OPTIONS, testCase[1]))
             }
 
             assert.throws(testBody, TypeError)
         })
     })
 
-    it('upload files', function (done) {
-        var s3 = mockS3()
+    it('upload files', async function () {
+        var gcs = mockGCS()
         var form = new FormData()
-        var storage = multerS3({ minioClient: s3, bucket: 'test' })
+        var storage = multerGCSStorage({ gcsClient: gcs, bucket: 'test' })
         var upload = multer({ storage: storage })
         var parser = upload.single('image')
         var image = fs.createReadStream(path.join(__dirname, 'files', 'ffffff.png'))
@@ -82,70 +82,14 @@ describe('Multer S3', function () {
             assert.equal(req.file.etag, 'mock-etag')
             assert.equal(req.file.location, 'mock-location')
 
-            done()
+            // done()
         })
     })
 
-    it('uploads file with AES256 server-side encryption', function (done) {
-        var s3 = mockS3()
+    it('uploads PNG file with correct content-type', async function () {
+        var gcs = mockGCS()
         var form = new FormData()
-        var storage = multerS3({ minioClient: s3, bucket: 'test', serverSideEncryption: 'AES256' })
-        var upload = multer({ storage: storage })
-        var parser = upload.single('image')
-        var image = fs.createReadStream(path.join(__dirname, 'files', 'ffffff.png'))
-
-        form.append('name', 'Multer')
-        form.append('image', image)
-
-        submitForm(parser, form, function (err, req) {
-            assert.ifError(err)
-
-            assert.equal(req.body.name, 'Multer')
-
-            assert.equal(req.file.fieldname, 'image')
-            assert.equal(req.file.originalname, 'ffffff.png')
-            assert.equal(req.file.size, 68)
-            assert.equal(req.file.bucket, 'test')
-            assert.equal(req.file.etag, 'mock-etag')
-            assert.equal(req.file.location, 'mock-location')
-            assert.equal(req.file.serverSideEncryption, 'AES256')
-
-            done()
-        })
-    })
-
-    it('uploads file with AWS KMS-managed server-side encryption', function (done) {
-        var s3 = mockS3()
-        var form = new FormData()
-        var storage = multerS3({ minioClient: s3, bucket: 'test', serverSideEncryption: 'aws:kms' })
-        var upload = multer({ storage: storage })
-        var parser = upload.single('image')
-        var image = fs.createReadStream(path.join(__dirname, 'files', 'ffffff.png'))
-
-        form.append('name', 'Multer')
-        form.append('image', image)
-
-        submitForm(parser, form, function (err, req) {
-            assert.ifError(err)
-
-            assert.equal(req.body.name, 'Multer')
-
-            assert.equal(req.file.fieldname, 'image')
-            assert.equal(req.file.originalname, 'ffffff.png')
-            assert.equal(req.file.size, 68)
-            assert.equal(req.file.bucket, 'test')
-            assert.equal(req.file.etag, 'mock-etag')
-            assert.equal(req.file.location, 'mock-location')
-            assert.equal(req.file.serverSideEncryption, 'aws:kms')
-
-            done()
-        })
-    })
-
-    it('uploads PNG file with correct content-type', function (done) {
-        var s3 = mockS3()
-        var form = new FormData()
-        var storage = multerS3({ minioClient: s3, bucket: 'test', serverSideEncryption: 'aws:kms', contentType: multerS3.AUTO_CONTENT_TYPE })
+        var storage = multerGCSStorage({ gcsClient: gcs, bucket: 'test', serverSideEncryption: 'aws:kms', contentType: multerGCSStorage.AUTO_CONTENT_TYPE })
         var upload = multer({ storage: storage })
         var parser = upload.single('image')
         var image = fs.createReadStream(path.join(__dirname, 'files', 'ffffff.png'))
@@ -167,14 +111,14 @@ describe('Multer S3', function () {
             assert.equal(req.file.location, 'mock-location')
             assert.equal(req.file.serverSideEncryption, 'aws:kms')
 
-            done()
+            // done()
         })
     })
 
-    it('uploads SVG file with correct content-type', function (done) {
-        var s3 = mockS3()
+    it('uploads SVG file with correct content-type', async function () {
+        var gcs = mockGCS()
         var form = new FormData()
-        var storage = multerS3({ minioClient: s3, bucket: 'test', serverSideEncryption: 'aws:kms', contentType: multerS3.AUTO_CONTENT_TYPE })
+        var storage = multerGCSStorage({ gcsClient: gcs, bucket: 'test', serverSideEncryption: 'aws:kms', contentType: multerGCSStorage.AUTO_CONTENT_TYPE })
         var upload = multer({ storage: storage })
         var parser = upload.single('image')
         var image = fs.createReadStream(path.join(__dirname, 'files', 'test.svg'))
@@ -196,7 +140,7 @@ describe('Multer S3', function () {
             assert.equal(req.file.location, 'mock-location')
             assert.equal(req.file.serverSideEncryption, 'aws:kms')
 
-            done()
+            // done()
         })
     })
 })

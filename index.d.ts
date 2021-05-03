@@ -1,8 +1,8 @@
-import * as minio from "minio";
+import { Storage } from "@google-cloud/storage";
 import { StorageEngine } from "multer";
 
 interface Options {
-    minioClient: minio.Client;
+    gcsClient: Storage;
     bucket: ((req: Express.Request, file: Express.Multer.File, callback: (error: any, bucket?: string) => void) => void) | string;
     key?(req: Express.Request, file: Express.Multer.File, callback: (error: any, key?: string) => void): void;
     acl?: ((req: Express.Request, file: Express.Multer.File, callback: (error: any, acl?: string) => void) => void) | string;
