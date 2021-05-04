@@ -373,7 +373,9 @@ GCSStorage.prototype._handleFile = function (req, file, cb) {
 
             thumbFileStream.on('finish', () => {
                 cb(null, {
-                    size: currentSize,
+                    size: thumbFileStream.bytesWritten,
+                    filename: parseFileKey(opts.key, 'thumb'),
+                    destination: `https://storage.googleapis.com/${bucket.name}/${thumbBlob.name}`,
                     url: `https://storage.googleapis.com/${bucket.name}/${thumbBlob.name}`,
                 });
             });
@@ -424,7 +426,9 @@ GCSStorage.prototype._handleFile = function (req, file, cb) {
 
             featuredFileStream.on('finish', () => {
                 cb(null, {
-                    size: currentSize,
+                    size: featuredFileStream.bytesWritten,
+                    filename: parseFileKey(opts.key, 'featured'),
+                    destination: `https://storage.googleapis.com/${bucket.name}/${featuredBlob.name}`,
                     url: `https://storage.googleapis.com/${bucket.name}/${featuredBlob.name}`,
                 });
             });
@@ -472,7 +476,9 @@ GCSStorage.prototype._handleFile = function (req, file, cb) {
 
         primaryFileStream.on('finish', () => {
             cb(null, {
-                size: currentSize,
+                size: primaryFileStream.bytesWritten,
+                filename: opts.key,
+                destination: `https://storage.googleapis.com/${bucket.name}/${primaryBlob.name}`,
                 url: `https://storage.googleapis.com/${bucket.name}/${primaryBlob.name}`,
             });
         });
