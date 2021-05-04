@@ -7,6 +7,10 @@ function createMockGCS(): any {
         return this;
     }
 
+    function file(objectName) {
+        return this;
+    }
+
     function upload(opts) {
         var ee: any = new events.EventEmitter()
 
@@ -53,6 +57,7 @@ function createMockGCS(): any {
 
     return {
         bucket,
+        file,
         upload: upload,
         putObject: putObject,
     }
