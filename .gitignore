@@ -16,6 +16,8 @@ log/
 tmp/
 temp/
 
+.env
+
 src/**/*.js
 src/**/*.js.map
 

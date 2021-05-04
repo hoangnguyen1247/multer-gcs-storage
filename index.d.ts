@@ -16,7 +16,7 @@ interface Options {
 
 declare global {
     namespace Express {
-        namespace MulterMinIOStorage {
+        namespace MulterGCSStorage {
             interface File extends Multer.File {
                 bucket: string;
                 key: string;
@@ -33,7 +33,7 @@ declare global {
     }
 }
 
-interface MulterMinIOStorage {
+interface MulterGCSStorage {
     (options?: Options): StorageEngine;
 
     AUTO_CONTENT_TYPE(
@@ -46,5 +46,5 @@ interface MulterMinIOStorage {
         callback: (error: any, mime?: string) => void): void;
 }
 
-declare const multerMinIOStorage: MulterMinIOStorage;
-export = multerMinIOStorage;
+declare const multerGCSStorage: MulterGCSStorage;
+export = multerGCSStorage;
